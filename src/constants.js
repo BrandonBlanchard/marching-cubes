@@ -274,7 +274,7 @@ export const edgeTable = [
     [3,7]
 ];
 
-const positionOffsets = [
+export const positionOffsets = [
     [-1, -1, 1], // v0
     [1, -1, 1], // v1
     [1, -1, -1], // v2

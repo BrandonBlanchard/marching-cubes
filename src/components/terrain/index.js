@@ -4,10 +4,8 @@ import * as THREE from 'three';
 import without from 'lodash/without';
 import flatten from 'lodash/flatten';
 
-import { positionOffsets, triTable, edgeTable } from '../../constants';
+import { positionOffsets, triTable, edgeTable, meshMaterial } from '../../constants';
 import { getTriTableIndex, interpolatePoints } from '../../utils/marching-cubes';
-
-const terrainMaterial = new THREE.MeshPhongMaterial({color: new THREE.Color('darkslategray'), side: THREE.DoubleSide, flatShading: true});
 
 const Terrain = props => {
     // Dimensions should be normalized to the sampleSpacing.
@@ -17,9 +15,12 @@ const Terrain = props => {
         height,
         depth
     ] = props.dimensions;
-    const { samplingFunction } = props;
-
-    const [terrainVertices, setTerrainVertices] = useState(new Float32Array());
+    const { 
+        samplingFunction,
+        setMessaging
+    } = props;
+    
+    const [terrainVertices, setTerrainVertices] = useState(new Float32Array(0,0,0));
 
     useEffect(() => {
         let verts = [];
@@ -60,10 +61,11 @@ const Terrain = props => {
                 }
             }
         }
-        console.log(`Constructed ${width*height*depth} cubes in ${performance.now() - t0}`);
         
+        setMessaging(`Constructed ${width*height*depth} cubes in ${(performance.now() - t0).toFixed(3)}ms`);
         setTerrainVertices(new Float32Array(verts));
-    }, []);
+    }, [samplingFunction, width, height, depth]);
+    
     
     const terrainMeshRef = useUpdate(geometry => {
         geometry.addAttribute('position', new THREE.BufferAttribute(terrainVertices, 3)); 
@@ -74,16 +76,9 @@ const Terrain = props => {
     return (
         <mesh 
             key='cube-mesh'
-            material={terrainMaterial}
+            material={meshMaterial}
             position={[0,0,0]}>
-                <bufferGeometry attach='geometry' ref={terrainMeshRef} >
-                    <bufferAttribute
-                        attachObject={['attributes', 'position']}
-                        count={0}
-                        itemSize={3}
-                        dynamic
-                        />
-                </bufferGeometry>
+                <bufferGeometry attach='geometry' ref={terrainMeshRef} />
             </mesh>
     );
 };

@@ -5,12 +5,11 @@ import flatten from 'lodash/flatten';
 import without from 'lodash/without';
 
 import { getTriTableIndex, interpolatePoints } from '../../utils/marching-cubes';
-import { triTable, edgeTable } from '../../constants';
+import { triTable, edgeTable, meshMaterial } from '../../constants';
 
 const COLOR_ON = 'blue';
 const COLOR_OFF = 'gray';
 
-const cubeMeshMaterial = new THREE.MeshBasicMaterial({color: new THREE.Color(0xdd34dd), side: THREE.DoubleSide});
 const togglePointHandler = (i, activePoints, setActivePoints) => {
     const newPoints = activePoints.slice();
     newPoints[i] = activePoints[i] === -1 ? 1 : -1;
@@ -72,7 +71,7 @@ const SingleCube = (props) => {
             
             <mesh 
                 key='cube-mesh'
-                material={cubeMeshMaterial}
+                material={meshMaterial}
                 position={[0,0,0]}>
                     <bufferGeometry attach='geometry' ref={cubeGeoRef} >
                         <bufferAttribute

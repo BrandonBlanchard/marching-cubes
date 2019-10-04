@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 // A table of edges in their triangulation order.
 export const triTable = [
     [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1],
@@ -285,3 +287,5 @@ export const positionOffsets = [
     [1, 1, -1], // v6
     [-1, 1, -1], // v7
 ];
+
+export const meshMaterial = new THREE.MeshPhongMaterial({color: new THREE.Color('blush'), side: THREE.DoubleSide, flatShading: true, shininess: 66 });

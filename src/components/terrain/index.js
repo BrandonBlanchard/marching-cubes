@@ -1,57 +1,66 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useUpdate } from 'react-three-fiber';
 import * as THREE from 'three';
-import { Noise } from 'noisejs';
 import without from 'lodash/without';
 import flatten from 'lodash/flatten';
 
-import { positionOffsets, triTable, edgeTable } from './../../constants';
+import { positionOffsets, triTable, edgeTable } from '../../constants';
 import { getTriTableIndex, interpolatePoints } from '../../utils/marching-cubes';
 
-const terrainMaterial = new THREE.MeshPhongMaterial({color: new THREE.Color('indianred'), side: THREE.DoubleSide, flatShading: true});
+const terrainMaterial = new THREE.MeshPhongMaterial({color: new THREE.Color('darkslategray'), side: THREE.DoubleSide, flatShading: true});
 
 const Terrain = props => {
     // Dimensions should be normalized to the sampleSpacing.
     // This means that if your dimensions are 10,10,10 and your sample spacing is 5 then you'll end up with a 50x50x50 grid of terrain.
     const [
         width,
-        depth,
-        height
+        height,
+        depth
     ] = props.dimensions;
-    
+    const { samplingFunction } = props;
+
     const [terrainVertices, setTerrainVertices] = useState(new Float32Array());
-    const noiseRef = useRef(new Noise(Math.random()));
 
     useEffect(() => {
-        const noise = noiseRef.current;
         let verts = [];
+        const t0 = performance.now();
         
-        for(let x = 0; x < width; x += 1) {
-            for(let z = 0; z < depth; z += 1) {
+        for(let x = width * -0.5, upperX = width/2; x < upperX; x += 1) {
+            for(let z = depth * -0.5, upperZ = depth/2; z < upperZ; z += 1) {
                 for(let y = 0; y < height; y += 1) {
-                    const vertPositions = positionOffsets.map(([ox,oy,oz]) => [x + ox * 0.5, y + oy * 0.5, z + oz * 0.5]);
-                    const sampleValues = vertPositions.map(([sx,sy,sz]) => noise.simplex3(sx,sy,sz));
-                    const triTableIndex = getTriTableIndex(sampleValues);
-                    const intersectedEdges = triTable[triTableIndex];
+                    // Get samples for the four corners of this cube
+                    const samplePositions = positionOffsets.map(([ox,oy,oz]) => [
+                        parseFloat((x + ox * 0.5).toFixed(2)),
+                        parseFloat((y + oy * 0.5).toFixed(2)),
+                        parseFloat((z + oz * 0.5).toFixed(2))
+                    ]);
                     
-                    const points = intersectedEdges.map(val => {
-                        if(val < 0) { return null; }
+                    const sampleValues = samplePositions.map(([sx,sy,sz]) => samplingFunction(sx,sy,sz));
                         
-                        const pointIndices = edgeTable[val];
+                    // Get the index for this sample combination
+                    const triTableIndex = getTriTableIndex(sampleValues);
+                    // Determine which edges have been intersected and drop any unneeded entries.
+                    const intersectedEdges = without(triTable[triTableIndex], -1);
+                    // For each intersected edge create a vertex
+                    const points = intersectedEdges.map(edgeId => {
+                        if(edgeId < 0) { return null; }
+                        
+                        const pointIndices = edgeTable[edgeId];
                         const v1 = interpolatePoints(
-                            vertPositions[pointIndices[0]],
-                            vertPositions[pointIndices[1]],
+                            samplePositions[pointIndices[0]],
+                            samplePositions[pointIndices[1]],
                             sampleValues[pointIndices[0]],
                             sampleValues[pointIndices[1]]);
                  
                          return v1;
                      });
                      
-                     const cubePositions = without(flatten(points), null);
-                     verts = [].concat(verts, cubePositions);
+                     const cubePositions = flatten(points);
+                     verts.push(...cubePositions);
                 }
             }
         }
+        console.log(`Constructed ${width*height*depth} cubes in ${performance.now() - t0}`);
         
         setTerrainVertices(new Float32Array(verts));
     }, []);
@@ -59,6 +68,7 @@ const Terrain = props => {
     const terrainMeshRef = useUpdate(geometry => {
         geometry.addAttribute('position', new THREE.BufferAttribute(terrainVertices, 3)); 
         terrainMeshRef.current.attributes.position.needsUpdate = true;
+        terrainMeshRef.current.computeBoundingBox();
     }, [terrainVertices]);
     
     return (

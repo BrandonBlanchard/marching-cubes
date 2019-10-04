@@ -24,13 +24,11 @@ export const arrayMax = (arr1, arr2) => arrayIsGreaterThan(arr1, arr2) ? arr1 : 
 export const arrayMin = (arr1, arr2) => arrayIsGreaterThan(arr1, arr2) ? arr2 : arr1;
 
 export const interpolatePoints = (p1, p2, val1, val2) => {
-    const high = arrayMax(p1, p2);
-    const low = arrayMin(p1, p2);
-    
+    // Interpolation func
+    // (p1 + (-valp1 / (valp2 - valp1)) * (p2 - p1));
     return [
-      (high[0] - low[0]) / 2 + low[0],
-      (high[1] - low[1]) / 2 + low[1],
-      (high[2] - low[2]) / 2 + low[2] 
+        p1[0] + (-val1 / (val2 - val1)) * (p2[0] - p1[0]),
+        p1[1] + (-val1 / (val2 - val1)) * (p2[1] - p1[1]),
+        p1[2] + (-val1 / (val2 - val1)) * (p2[2] - p1[2])
     ];
-    
 };
